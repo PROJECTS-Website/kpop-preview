@@ -1,8 +1,10 @@
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { GameState, KpopItem, UserStats } from "../types/game";
-import { getDailyGameItem } from "../data/gameItems";
+import { createContext, useContext, useState, useEffect } from "react";
+import { GameState, UserStats } from "../types/game";
 import { toast } from "sonner";
+import { calculateScore, copyToClipboard } from "../utils/gameUtils";
+import { getDailyGameItem } from "../data/gameItems";
+import { useGameStorage } from "../hooks/useGameStorage";
 
 interface GameContextType {
   gameState: GameState;
@@ -15,22 +17,6 @@ interface GameContextType {
   isLoading: boolean;
 }
 
-const initialGameState: GameState = {
-  currentItem: undefined,
-  revealedClues: [1], // Show first clue by default
-  guesses: [],
-  solved: false,
-  score: 0
-};
-
-const initialUserStats: UserStats = {
-  streak: 0,
-  totalPlayed: 0,
-  totalWon: 0,
-  averageGuesses: 0,
-  bestScore: 0
-};
-
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export function useGameContext() {
@@ -42,9 +28,22 @@ export function useGameContext() {
 }
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
-  const [gameState, setGameState] = useState<GameState>(initialGameState);
-  const [userStats, setUserStats] = useState<UserStats>(initialUserStats);
+  const [gameState, setGameState] = useState<GameState>({
+    revealedClues: [1],
+    guesses: [],
+    solved: false,
+    score: 0
+  });
+  const [userStats, setUserStats] = useState<UserStats>({
+    streak: 0,
+    totalPlayed: 0,
+    totalWon: 0,
+    averageGuesses: 0,
+    bestScore: 0
+  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  const { saveGameState, saveUserStats, loadGameState, loadUserStats } = useGameStorage();
 
   // Initialize the game on first load
   useEffect(() => {
@@ -55,16 +54,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     
     try {
-      // Load any saved game state from localStorage
-      const savedGameState = localStorage.getItem("kpop_game_state");
-      const savedUserStats = localStorage.getItem("kpop_user_stats");
+      // Load any saved game state and stats
+      const savedState = loadGameState();
+      const savedStats = loadUserStats();
       
       // Check if we have a saved game from today
       let shouldStartNewGame = true;
       
-      if (savedGameState) {
-        const parsed = JSON.parse(savedGameState);
-        const lastPlayDate = parsed.startTime ? new Date(parsed.startTime) : null;
+      if (savedState) {
+        const lastPlayDate = savedState.startTime ? new Date(savedState.startTime) : null;
         
         if (lastPlayDate) {
           const today = new Date();
@@ -72,11 +70,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             lastPlayDate.getDate() !== today.getDate() || 
             lastPlayDate.getMonth() !== today.getMonth() ||
             lastPlayDate.getFullYear() !== today.getFullYear() ||
-            parsed.solved;
+            savedState.solved;
         }
         
         if (!shouldStartNewGame) {
-          setGameState(parsed);
+          setGameState(savedState);
         }
       }
       
@@ -91,9 +89,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         });
       }
       
-      // Load user stats if available
-      if (savedUserStats) {
-        setUserStats(JSON.parse(savedUserStats));
+      // Set user stats if available
+      if (savedStats) {
+        setUserStats(savedStats);
       }
     } catch (error) {
       console.error("Error initializing game:", error);
@@ -110,14 +108,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const saveGameState = (state: GameState) => {
-    localStorage.setItem("kpop_game_state", JSON.stringify(state));
-  };
-
-  const saveUserStats = (stats: UserStats) => {
-    localStorage.setItem("kpop_user_stats", JSON.stringify(stats));
   };
 
   const submitGuess = (guess: string): boolean => {
@@ -158,7 +148,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // Show success toast
       toast.success("Congratulations! You got it right!");
     } else {
-      // Show clue toast
+      // Show error toast
       toast.error("Not correct! Try again.");
       
       // Reveal next clue if there are more available
@@ -193,7 +183,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const resetGame = () => {
     const dailyItem = getDailyGameItem();
-    const newGameState: GameState = {
+    const newGameState = {
       currentItem: dailyItem,
       revealedClues: [1],
       guesses: [],
@@ -228,23 +218,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       // Fallback: copy to clipboard
       copyToClipboard(shareText);
     }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      toast.success("Result copied to clipboard!");
-    }).catch(err => {
-      console.error("Could not copy text: ", err);
-      toast.error("Could not copy to clipboard");
-    });
-  };
-
-  const calculateScore = (cluesRevealed: number, guesses: number, startTime: Date): number => {
-    const timeBonus = Math.max(0, 100 - Math.floor((new Date().getTime() - startTime.getTime()) / 1000));
-    const clueBonus = Math.max(0, 500 - (cluesRevealed * 100));
-    const guessBonus = Math.max(0, 500 - (guesses * 50));
-    
-    return clueBonus + guessBonus + timeBonus;
   };
 
   return (

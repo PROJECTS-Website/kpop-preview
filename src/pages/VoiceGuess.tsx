@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useGameContext } from "@/contexts/GameContext";
 import { Button } from "@/components/ui/button";
@@ -8,8 +7,9 @@ import ClueDisplay from "@/components/ClueDisplay";
 import GuessInput from "@/components/GuessInput";
 import ResultShare from "@/components/ResultShare";
 import UserStats from "@/components/UserStats";
+import { GameProvider } from "@/contexts/GameContext";
 
-const VoiceGuess = () => {
+const VoiceGuessContent = () => {
   const { gameState, isLoading } = useGameContext();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -105,6 +105,14 @@ const VoiceGuess = () => {
         &copy; 2025 K-Pop Guess Game | Daily K-pop guessing game
       </footer>
     </div>
+  );
+};
+
+const VoiceGuess = () => {
+  return (
+    <GameProvider>
+      <VoiceGuessContent />
+    </GameProvider>
   );
 };
 

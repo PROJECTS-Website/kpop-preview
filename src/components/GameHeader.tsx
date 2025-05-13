@@ -1,23 +1,39 @@
 
-import { Music } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Home, Grid, User, Settings } from "lucide-react";
 
 const GameHeader = () => {
   return (
-    <header className="w-full py-4 px-4 sm:px-6 md:px-8 flex justify-between items-center border-b border-pink-200">
-      <div className="flex items-center gap-2">
-        <Music className="h-6 w-6 text-kpop-primary" />
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-kpop-primary to-kpop-accent bg-clip-text text-transparent">
-          K-Pop Guess
-        </h1>
+    <header className="bg-white shadow-sm py-4">
+      <div className="container max-w-4xl mx-auto px-4">
+        <div className="flex justify-between items-center">
+          <Link to="/" className="flex items-center">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-kpop-primary to-kpop-accent bg-clip-text text-transparent">
+              K-pop Guess
+            </h1>
+          </Link>
+          
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="icon" asChild>
+              <Link to="/">
+                <Home className="h-5 w-5" />
+              </Link>
+            </Button>
+            
+            <Button variant="ghost" size="icon" asChild>
+              <Link to="/games">
+                <Grid className="h-5 w-5" />
+              </Link>
+            </Button>
+            
+            <Button variant="outline" size="sm" className="ml-2">
+              <User className="h-4 w-4 mr-1" />
+              Login
+            </Button>
+          </div>
+        </div>
       </div>
-      <nav className="flex gap-4">
-        <a href="#" className="text-kpop-primary hover:text-kpop-accent font-medium">
-          Rules
-        </a>
-        <a href="#" className="text-kpop-primary hover:text-kpop-accent font-medium">
-          Leaderboard
-        </a>
-      </nav>
     </header>
   );
 };

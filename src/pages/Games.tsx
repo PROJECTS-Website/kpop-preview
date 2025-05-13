@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MusicNote, Image, Timer, Award } from "lucide-react";
+import { Music, Image, Timer, Award } from "lucide-react";
 
 const GameCard = ({ 
   title, 
@@ -47,7 +47,7 @@ const Games = () => {
         <GameCard
           title="Voice Guess"
           description="Listen to audio clips and guess the idol"
-          icon={<MusicNote className="h-8 w-8 text-kpop-primary" />}
+          icon={<Music className="h-8 w-8 text-kpop-primary" />}
           to="/voice-guess"
         />
         
